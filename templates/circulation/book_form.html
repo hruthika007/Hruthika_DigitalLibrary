@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="app-card p-4 p-md-5">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-primary text-white rounded-3 p-3">
+                        <i class="bi bi-book-half fs-3"></i>
+                    </div>
+                    <div>
+                        <h2 class="fw-extrabold mb-1">{{ title }}</h2>
+                        <p class="text-muted mb-0">Expand the digital catalog with new literary or technical titles.</p>
+                    </div>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">Book Title *</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>{% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.author.id_for_label }}" class="form-label fw-bold d-flex justify-content-between">
+                                <span>Author *</span>
+                                <a href="{% url 'author_create' %}" class="small text-decoration-none">+ New Author</a>
+                            </label>
+                            {{ form.author }}
+                            {% if form.author.errors %}<div class="text-danger small mt-1">{% for e in form.author.errors %}{{ e }}{% endfor %}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.genre.id_for_label }}" class="form-label fw-bold">Genre *</label>
+                            {{ form.genre }}
+                            {% if form.genre.errors %}<div class="text-danger small mt-1">{% for e in form.genre.errors %}{{ e }}{% endfor %}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.isbn.id_for_label }}" class="form-label fw-bold">ISBN (Unique) *</label>
+                        {{ form.isbn }}
+                        {% if form.isbn.errors %}<div class="text-danger small mt-1">{% for e in form.isbn.errors %}{{ e }}{% endfor %}</div>{% endif %}
+                        <div class="form-text">Standard ISBN-10 or ISBN-13 format.</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.total_copies.id_for_label }}" class="form-label fw-bold">Total Copies Inventory *</label>
+                            {{ form.total_copies }}
+                            {% if form.total_copies.errors %}<div class="text-danger small mt-1">{% for e in form.total_copies.errors %}{{ e }}{% endfor %}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.available_copies.id_for_label }}" class="form-label fw-bold">Available Copies (Initial) *</label>
+                            {{ form.available_copies }}
+                            {% if form.available_copies.errors %}<div class="text-danger small mt-1">{% for e in form.available_copies.errors %}{{ e }}{% endfor %}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.cover_url.id_for_label }}" class="form-label fw-bold">Cover Image URL</label>
+                        {{ form.cover_url }}
+                        <div class="form-text">Direct web link to book cover image (e.g., Unsplash or Open Library).</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">Plot / Synopsis</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'book_catalog' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary-custom px-5 py-2 fw-bold shadow">
+                            Save Book Title
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

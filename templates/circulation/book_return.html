@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Return Book: {{ record.book.title }} | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="app-card p-4 p-md-5 border-0 shadow-sm">
+                <!-- Return Workflow Header -->
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="bg-success text-white rounded-3 p-3 shadow-sm">
+                        <i class="bi bi-box-arrow-in-left fs-3"></i>
+                    </div>
+                    <div>
+                        <h2 class="fw-extrabold mb-1">Process Book Return</h2>
+                        <p class="text-muted mb-0">Check in returned book, restore inventory copy, and compute overdue fine.</p>
+                    </div>
+                </div>
+
+                <!-- Circulation Record Context Box -->
+                <div class="p-4 bg-light rounded-3 border mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6 border-end-md">
+                            <span class="small text-muted text-uppercase fw-bold">Book Title</span>
+                            <h5 class="fw-bold mb-1 text-primary">{{ record.book.title }}</h5>
+                            <div class="small text-muted mb-2">Author: {{ record.book.author.name }}</div>
+                            <span class="badge bg-secondary-subtle text-secondary mono-font">ISBN: {{ record.book.isbn }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="small text-muted text-uppercase fw-bold">Borrower Details</span>
+                            <h5 class="fw-bold mb-1">{{ record.member.name }}</h5>
+                            <div class="small text-muted mb-2">{{ record.member.email }}</div>
+                            <span class="badge bg-primary-subtle text-primary mono-font">{{ record.member.member_id }}</span>
+                        </div>
+                    </div>
+
+                    <hr class="my-3 text-muted opacity-25">
+
+                    <div class="row g-3 text-center">
+                        <div class="col-4">
+                            <span class="small text-muted d-block">Issued On</span>
+                            <span class="fw-bold text-dark">{{ record.issue_date|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="small text-muted d-block">Official Due Date</span>
+                            <span 
+                                id="record-due-date-val" 
+                                class="fw-bold {% if record.is_overdue %}text-danger{% else %}text-success{% endif %}"
+                                data-due-date="{{ record.due_date|date:'Y-m-d' }}"
+                            >
+                                {{ record.due_date|date:"M d, Y" }}
+                            </span>
+                        </div>
+                        <div class="col-4">
+                            <span class="small text-muted d-block">Standard Rate</span>
+                            <span id="daily-fine-rate-val" class="fw-bold text-muted" data-rate="{{ fine_rate }}">
+                                ${{ fine_rate|floatformat:2 }}/day
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Real-Time Fine Calculator Display -->
+                <div class="calc-display mb-4 shadow">
+                    <div class="row align-items-center g-3">
+                        <div class="col-sm-6 text-center text-sm-start">
+                            <div class="calc-stat-label">Overdue Days Duration</div>
+                            <div id="calc-late-days" class="fs-4 fw-bold text-white mt-1">
+                                {% if overdue_days > 0 %}
+                                    {{ overdue_days }} day(s) late
+                                {% else %}
+                                    0 days (On Time)
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6 text-center text-sm-end">
+                            <div class="calc-stat-label">Calculated Return Fine</div>
+                            <div id="calc-fine-amount" class="calc-stat-value {% if estimated_fine > 0 %}text-warning{% else %}text-success{% endif %}">
+                                ${{ estimated_fine|floatformat:2 }}
+                            </div>
+                        </div>
+                    </div>
+                    <div id="calc-status-notice" class="mt-3">
+                        <!-- Injected via JavaScript based on return date -->
+                    </div>
+                </div>
+
+                <!-- Return Form -->
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="{{ form.return_date.id_for_label }}" class="form-label fw-bold">
+                            <i class="bi bi-calendar-check me-1 text-primary"></i> Actual Return Date *
+                        </label>
+                        {{ form.return_date }}
+                        <div class="form-text">Change this date to simulate or calculate overdue fines for past or future dates.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">Return Remarks / Condition</label>
+                        {{ form.notes }}
+                        <div class="form-text">Optional condition confirmation or receipt reference.</div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                        <a href="{% url 'circulation_list' %}" class="btn btn-outline-secondary px-4">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow">
+                            <i class="bi bi-check-circle-fill me-1"></i> Confirm & Complete Return
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

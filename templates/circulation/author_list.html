@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Authors | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-extrabold mb-1">Author Directory</h1>
+            <p class="text-muted mb-0">Discover writers, creators, and contributors across our digital catalog.</p>
+        </div>
+        <a href="{% url 'author_create' %}" class="btn btn-primary-custom fw-semibold shadow-sm">
+            <i class="bi bi-person-plus me-1"></i> Add Author
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for author in authors %}
+            <div class="col-md-6 col-lg-4">
+                <div class="app-card p-4 h-100 d-flex flex-column">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 52px; height: 52px;">
+                            {{ author.name|slice:":1" }}
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">{{ author.name }}</h5>
+                            <span class="badge bg-secondary-subtle text-secondary">{{ author.num_books }} Titles in Catalog</span>
+                        </div>
+                    </div>
+                    <p class="text-muted small flex-grow-1">
+                        {% if author.biography %}
+                            {{ author.biography|truncatewords:28 }}
+                        {% else %}
+                            No biography available.
+                        {% endif %}
+                    </p>
+                    <div class="pt-3 border-top mt-auto">
+                        <a href="{% url 'book_catalog' %}?q={{ author.name }}" class="small fw-semibold text-decoration-none">
+                            Browse books by this author &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 py-5 text-center text-muted">
+                <h4>No authors found</h4>
+                <a href="{% url 'author_create' %}" class="btn btn-primary">Add Author</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

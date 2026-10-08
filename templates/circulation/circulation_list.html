@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Circulation Hub | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Circulation Hub Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="fw-extrabold mb-1">Circulation Log & History</h1>
+            <p class="text-muted mb-0">Track all current and historical book issuances, due dates, returns, and calculated fines.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'issue_book' %}" class="btn btn-primary-custom fw-semibold shadow-sm">
+                <i class="bi bi-journal-plus me-1"></i> Issue New Book
+            </a>
+            <a href="{% url 'due_date_calculator' %}" class="btn btn-outline-custom">
+                <i class="bi bi-calculator me-1"></i> Calculator
+            </a>
+        </div>
+    </div>
+
+    <!-- Circulation Overview Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="app-card p-3">
+                <div class="d-flex align-items-center justify-content-between text-muted mb-1">
+                    <span class="small fw-bold text-uppercase">Total Records</span>
+                    <i class="bi bi-folder2-open fs-5 text-primary"></i>
+                </div>
+                <div class="fs-2 fw-bold text-dark">{{ metrics.total }}</div>
+                <span class="small text-muted">All circulation events</span>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="app-card p-3">
+                <div class="d-flex align-items-center justify-content-between text-muted mb-1">
+                    <span class="small fw-bold text-uppercase">Active Loans</span>
+                    <i class="bi bi-arrow-repeat fs-5 text-info"></i>
+                </div>
+                <div class="fs-2 fw-bold text-primary">{{ metrics.active }}</div>
+                <span class="small text-muted">Currently out on loan</span>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="app-card p-3">
+                <div class="d-flex align-items-center justify-content-between text-muted mb-1">
+                    <span class="small fw-bold text-uppercase">Overdue Loans</span>
+                    <i class="bi bi-exclamation-octagon fs-5 text-danger"></i>
+                </div>
+                <div class="fs-2 fw-bold text-danger">{{ metrics.overdue }}</div>
+                <span class="small text-danger fw-semibold">Requiring return/fine</span>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="app-card p-3">
+                <div class="d-flex align-items-center justify-content-between text-muted mb-1">
+                    <span class="small fw-bold text-uppercase">Fines Collected</span>
+                    <i class="bi bi-cash-coin fs-5 text-success"></i>
+                </div>
+                <div class="fs-2 fw-bold text-success">${{ metrics.fines_collected|floatformat:2 }}</div>
+                <span class="small text-muted">Settled overdue penalties</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Filter Tabs & Search Bar -->
+    <div class="app-card p-3 mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-7">
+                <ul class="nav nav-pills gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'all' %}active bg-primary{% endif %}" href="?status=all{% if search_query %}&q={{ search_query }}{% endif %}">
+                            All Records <span class="badge bg-light text-dark ms-1">{{ metrics.total }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'active' %}active bg-primary{% endif %}" href="?status=active{% if search_query %}&q={{ search_query }}{% endif %}">
+                            Active <span class="badge bg-light text-dark ms-1">{{ metrics.active }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'overdue' %}active bg-danger{% endif %}" href="?status=overdue{% if search_query %}&q={{ search_query }}{% endif %}">
+                            <i class="bi bi-exclamation-circle me-1"></i> Overdue <span class="badge bg-light text-danger ms-1">{{ metrics.overdue }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'returned' %}active bg-success{% endif %}" href="?status=returned{% if search_query %}&q={{ search_query }}{% endif %}">
+                            Returned <span class="badge bg-light text-dark ms-1">{{ metrics.returned }}</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Instant Quick Filter Field -->
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted border-2"><i class="bi bi-search"></i></span>
+                    <input 
+                        type="text" 
+                        id="table-quick-search" 
+                        class="form-control border-2" 
+                        placeholder="Live filter records by book, member, ID..."
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Circulation Records Table -->
+    <div class="app-card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table custom-table searchable-table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Book Information</th>
+                        <th>Member Details</th>
+                        <th>Issued Date</th>
+                        <th>Due Date</th>
+                        <th>Return Status</th>
+                        <th>Fine Amount</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <!-- Book Info -->
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if record.book.cover_url %}
+                                        <img src="{{ record.book.cover_url }}" alt="{{ record.book.title }}" class="rounded shadow-sm" style="width: 38px; height: 52px; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=600&q=80'">
+                                    {% endif %}
+                                    <div>
+                                        <a href="{% url 'book_detail' pk=record.book.pk %}" class="fw-bold text-dark text-decoration-none">
+                                            {{ record.book.title }}
+                                        </a>
+                                        <div class="small text-muted">by {{ record.book.author.name }}</div>
+                                        <span class="mono-font small text-muted">{{ record.book.isbn }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Member Info -->
+                            <td>
+                                <a href="{% url 'member_detail' pk=record.member.pk %}" class="fw-bold text-dark text-decoration-none">
+                                    {{ record.member.name }}
+                                </a>
+                                <div><span class="badge bg-secondary-subtle text-secondary mono-font">{{ record.member.member_id }}</span></div>
+                                <div class="small text-muted">{{ record.member.email }}</div>
+                            </td>
+
+                            <!-- Issue Date -->
+                            <td>
+                                <span class="text-dark">{{ record.issue_date|date:"M d, Y" }}</span>
+                            </td>
+
+                            <!-- Due Date -->
+                            <td>
+                                <div class="{% if record.is_overdue and not record.returned %}text-danger fw-bold{% else %}text-dark{% endif %}">
+                                    {{ record.due_date|date:"M d, Y" }}
+                                </div>
+                                {% if not record.returned %}
+                                    {% if record.is_overdue %}
+                                        <span class="small text-danger">({{ record.days_overdue }} days late)</span>
+                                    {% else %}
+                                        <span class="small text-muted">({{ record.days_remaining }} days left)</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                            <!-- Status Badge -->
+                            <td>
+                                {% if record.returned %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check2 me-1"></i> Returned on {{ record.return_date|date:"M d" }}
+                                    </span>
+                                {% elif record.is_overdue %}
+                                    <span class="badge bg-danger text-white rounded-pill px-2 py-1 overdue-pulse">
+                                        <i class="bi bi-exclamation-triangle me-1"></i> Overdue ({{ record.days_overdue }}d)
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                        <i class="bi bi-clock me-1"></i> Active
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Fine -->
+                            <td>
+                                {% if record.returned %}
+                                    {% if record.fine_amount > 0 %}
+                                        <span class="badge bg-danger-subtle text-danger fs-6 fw-bold">
+                                            ${{ record.fine_amount|floatformat:2 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">$0.00</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if record.is_overdue %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis fs-6 fw-bold">
+                                            Est. ${{ record.current_estimated_fine|floatformat:2 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">$0.00</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                            <!-- Action -->
+                            <td class="text-end">
+                                {% if not record.returned %}
+                                    <a href="{% url 'return_book' record_id=record.pk %}" class="btn btn-sm btn-outline-danger fw-semibold">
+                                        <i class="bi bi-box-arrow-in-left me-1"></i> Return Book
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-light text-muted">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="py-5 text-center text-muted">
+                                <i class="bi bi-folder-x fs-1 d-block mb-2 text-muted opacity-50"></i>
+                                <h5>No circulation records found</h5>
+                                <p class="small">Try changing your filter tabs or issue a new book.</p>
+                                <a href="{% url 'issue_book' %}" class="btn btn-primary btn-sm">Issue Book</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Issue Book | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header Card -->
+            <div class="app-card p-4 p-md-5 mb-4 border-0 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="bg-primary text-white rounded-3 p-3 shadow-sm">
+                        <i class="bi bi-journal-plus fs-3"></i>
+                    </div>
+                    <div>
+                        <h2 class="fw-extrabold mb-1">Issue a Library Book</h2>
+                        <p class="text-muted mb-0">Record book checkout, assign member, and establish 14-day return due date.</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 d-flex align-items-center gap-2 mb-4 py-2">
+                    <i class="bi bi-info-circle-fill fs-5"></i>
+                    <div class="small">
+                        <strong>Circulation Policy:</strong> Default borrowing period is <strong>14 calendar days</strong>. Overdue books accumulate fines at <strong>${{ fine_rate|floatformat:2 }} per day</strong>.
+                    </div>
+                </div>
+
+                <form method="post" novalidate id="issue-form">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Book Selection -->
+                    <div class="mb-4">
+                        <label for="{{ form.book.id_for_label }}" class="form-label fw-bold d-flex justify-content-between">
+                            <span>Select Book from Catalog *</span>
+                            <a href="{% url 'book_create' %}" class="small text-decoration-none">+ Add New Title</a>
+                        </label>
+                        {{ form.book }}
+                        {% if form.book.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.book.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Choose the book to be issued. Books with 0 copies cannot be issued.</div>
+                    </div>
+
+                    <!-- Member Selection -->
+                    <div class="mb-4">
+                        <label for="{{ form.member.id_for_label }}" class="form-label fw-bold d-flex justify-content-between">
+                            <span>Borrower / Member *</span>
+                            <a href="{% url 'member_create' %}" class="small text-decoration-none">+ Register New Member</a>
+                        </label>
+                        {{ form.member }}
+                        {% if form.member.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.member.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Select the registered member borrowing this item.</div>
+                    </div>
+
+                    <!-- Issue Date & Due Date with Live Interactive Calculation -->
+                    <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                        <div class="col-md-6">
+                            <label for="{{ form.issue_date.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-calendar-event me-1 text-primary"></i> Issue Date *
+                            </label>
+                            {{ form.issue_date }}
+                            {% if form.issue_date.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.issue_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Defaults to today's checkout date.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.due_date.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-calendar-check me-1 text-success"></i> Due Date (14 Days) *
+                            </label>
+                            {{ form.due_date }}
+                            {% if form.due_date.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.due_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text d-flex justify-content-between">
+                                <span>Computed due date:</span>
+                                <span id="preview-due-date-badge" class="badge bg-success-subtle text-success border border-success-subtle">
+                                    +14 Days Auto
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Optional Notes -->
+                    <div class="mb-4">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">Circulation Notes (Optional)</label>
+                        {{ form.notes }}
+                        <div class="form-text">Record any condition notes, reference code, or special loan remarks.</div>
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                        <a href="{% url 'book_catalog' %}" class="btn btn-outline-secondary px-4">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary-custom px-5 py-2 fw-bold shadow">
+                            <i class="bi bi-check2-circle me-1"></i> Confirm & Issue Book
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Member Directory & Dashboards | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="fw-extrabold mb-1">Library Member Directory</h1>
+            <p class="text-muted mb-0">View registered patrons, current borrowing quotas, active loans, and overdue alerts.</p>
+        </div>
+        <div>
+            <a href="{% url 'member_create' %}" class="btn btn-primary-custom fw-semibold shadow-sm">
+                <i class="bi bi-person-plus-fill me-1"></i> Register New Member
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Search Card -->
+    <div class="app-card p-3 mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted border-2"><i class="bi bi-search"></i></span>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        class="form-control border-2" 
+                        placeholder="Search members by name, Member ID (e.g. MEM-1001), email, phone..." 
+                        value="{{ search_query }}"
+                    >
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary-custom flex-grow-1">Search</button>
+                {% if search_query %}
+                    <a href="{% url 'member_list' %}" class="btn btn-outline-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Members Grid -->
+    <div class="row g-4">
+        {% for member in members %}
+            <div class="col-md-6 col-lg-4">
+                <div class="app-card p-4 h-100 d-flex flex-column">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 52px; height: 52px;">
+                                {{ member.name|slice:":1" }}
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0">
+                                    <a href="{% url 'member_detail' pk=member.pk %}" class="text-dark text-decoration-none">
+                                        {{ member.name }}
+                                    </a>
+                                </h5>
+                                <span class="badge bg-secondary-subtle text-secondary mono-font">{{ member.member_id }}</span>
+                            </div>
+                        </div>
+
+                        {% if member.overdue_borrowed_count > 0 %}
+                            <span class="badge bg-danger rounded-pill px-2 py-1 overdue-pulse" title="Has overdue loans!">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Overdue
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contact Details -->
+                    <div class="small text-muted mb-3 flex-grow-1">
+                        <div class="mb-1 d-flex align-items-center gap-2">
+                            <i class="bi bi-envelope text-muted"></i>
+                            <span>{{ member.email }}</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-telephone text-muted"></i>
+                            <span>{{ member.phone }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Stats -->
+                    <div class="row g-2 text-center p-2 bg-light rounded-3 mb-3">
+                        <div class="col-4">
+                            <span class="small text-muted d-block">Active</span>
+                            <span class="fw-bold text-primary">{{ member.active_borrowed_count }}</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="small text-muted d-block">Total</span>
+                            <span class="fw-bold text-dark">{{ member.total_borrowed_count }}</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="small text-muted d-block">Fines</span>
+                            <span class="fw-bold {% if member.total_fines_accumulated > 0 %}text-danger{% else %}text-success{% endif %}">
+                                ${{ member.total_fines_accumulated|floatformat:2 }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Button to Member Dashboard -->
+                    <div class="mt-auto">
+                        <a href="{% url 'member_detail' pk=member.pk %}" class="btn btn-outline-custom w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                            <span>Open Member Dashboard</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 py-5 text-center text-muted">
+                <h4>No library members found</h4>
+                <p>Register new members to start issuing books.</p>
+                <a href="{% url 'member_create' %}" class="btn btn-primary">Register Member</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

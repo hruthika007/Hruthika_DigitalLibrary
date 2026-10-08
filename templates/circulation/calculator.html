@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Interactive Due-Date & Fine Calculator | Digital Library Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-semibold mb-2">
+                    <i class="bi bi-calculator-fill me-1"></i> Circulation Calculator
+                </span>
+                <h1 class="display-6 fw-extrabold mb-2">Interactive Due-Date & Fine Calculator</h1>
+                <p class="lead text-muted col-lg-8 mx-auto">
+                    Simulate borrowing periods, project official 14-day return due dates, and dynamically compute overdue penalty fines in real-time.
+                </p>
+            </div>
+
+            <!-- Main Interactive Calculator Grid -->
+            <div class="row g-4 mb-5">
+                <!-- Calculator Controls (Inputs) -->
+                <div class="col-lg-6">
+                    <div class="app-card p-4 p-md-5 h-100 shadow-sm">
+                        <h4 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                            <span class="bg-primary text-white rounded-3 p-2 d-inline-flex">
+                                <i class="bi bi-sliders fs-5"></i>
+                            </span>
+                            <span>Circulation Parameters</span>
+                        </h4>
+
+                        <div class="mb-4">
+                            <label for="calc-standalone-issue" class="form-label fw-bold">
+                                <i class="bi bi-calendar-plus text-primary me-1"></i> Issue Date
+                            </label>
+                            <input 
+                                type="date" 
+                                id="calc-standalone-issue" 
+                                class="form-control form-control-lg border-2" 
+                                value="{{ today }}"
+                            >
+                            <div class="form-text">The date when book is checked out to the borrower.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="calc-standalone-duration" class="form-label fw-bold d-flex justify-content-between">
+                                <span><i class="bi bi-hourglass-split text-info me-1"></i> Loan Duration (Days)</span>
+                                <span class="badge bg-light text-dark border">Standard: 14 Days</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="calc-standalone-duration" 
+                                class="form-control form-control-lg border-2" 
+                                min="1" 
+                                max="90" 
+                                value="14"
+                            >
+                            <div class="form-text">Library policy assigns 14 calendar days for regular book loans.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="calc-standalone-return" class="form-label fw-bold">
+                                <i class="bi bi-calendar-check text-success me-1"></i> Actual / Simulated Return Date
+                            </label>
+                            <input 
+                                type="date" 
+                                id="calc-standalone-return" 
+                                class="form-control form-control-lg border-2" 
+                                value="{{ default_due }}"
+                            >
+                            <div class="form-text">Select a past or future date to test overdue fines.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="calc-standalone-rate" class="form-label fw-bold">
+                                <i class="bi bi-currency-dollar text-warning me-1"></i> Daily Fine Rate ($ / Day Overdue)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="calc-standalone-rate" 
+                                class="form-control form-control-lg border-2" 
+                                step="0.25" 
+                                min="0" 
+                                value="{{ fine_rate }}"
+                            >
+                            <div class="form-text">Configured policy rate ($1.00 per day).</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Computed Display (Outputs) -->
+                <div class="col-lg-6">
+                    <div class="app-card p-4 p-md-5 h-100 d-flex flex-column shadow-sm bg-light">
+                        <h4 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                            <span class="bg-success text-white rounded-3 p-2 d-inline-flex">
+                                <i class="bi bi-speedometer2 fs-5"></i>
+                            </span>
+                            <span>Real-Time Computation</span>
+                        </h4>
+
+                        <!-- Status Alert Banner -->
+                        <div id="out-status-banner" class="alert alert-success d-flex align-items-center gap-2 mb-4">
+                            <i class="bi bi-check-circle-fill fs-4"></i>
+                            <div>
+                                <strong>Circulation Status: ON TIME!</strong><br>
+                                Book returned within 14 days limit. Zero fine is charged.
+                            </div>
+                        </div>
+
+                        <!-- KPI Grid -->
+                        <div class="row g-3 mb-4 flex-grow-1">
+                            <div class="col-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <div class="small text-muted text-uppercase fw-bold">Official Due Date</div>
+                                    <div id="out-due-date" class="fs-5 fw-bold text-dark mt-1">—</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <div class="small text-muted text-uppercase fw-bold">Days Borrowed</div>
+                                    <div id="out-total-borrowed" class="fs-5 fw-bold text-dark mt-1">14 Days</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <div class="small text-muted text-uppercase fw-bold">Days Overdue</div>
+                                    <div id="out-days-overdue" class="fs-5 fw-bold text-danger mt-1">0 Days</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <div class="small text-muted text-uppercase fw-bold">Calculated Fine</div>
+                                    <div id="out-fine-total" class="fs-4 fw-extrabold text-success mt-1">$0.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mathematical Formula Note -->
+                        <div class="p-3 bg-white rounded-3 border small text-muted">
+                            <div class="fw-bold text-dark mb-1"><i class="bi bi-info-circle me-1"></i> Business Logic Calculation:</div>
+                            <ul class="mb-0 ps-3">
+                                <li><code>Due Date = Issue Date + 14 Days</code></li>
+                                <li><code>Overdue Days = max(0, Return Date - Due Date)</code></li>
+                                <li><code>Total Fine = Overdue Days × Daily Rate ($1.00)</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Links -->
+            <div class="app-card p-4 text-center">
+                <h5 class="fw-bold mb-2">Ready to test real circulation records?</h5>
+                <p class="text-muted small mb-3">Jump into active circulation to issue books or check in returned items.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url 'issue_book' %}" class="btn btn-primary-custom px-4">Issue a Book</a>
+                    <a href="{% url 'circulation_list' %}" class="btn btn-outline-secondary px-4">Circulation Hub</a>
+                    <a href="{% url 'book_catalog' %}" class="btn btn-outline-info px-4">Browse Catalog</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
